@@ -93,6 +93,7 @@ private:
   // Warning: this is indexed by array_expressions and not string expressions
 
   index_set_pairt index_sets;
+protected:
   union_find_replacet symbol_resolve;
 
   std::vector<equal_exprt> equations;
@@ -111,5 +112,16 @@ exprt concretize_arrays_in_expression(
   const namespacet &ns);
 
 bool is_char_array_type(const typet &type, const namespacet &ns);
-
+bool has_char_array_subexpr(const exprt &expr, const namespacet &ns);
+union_find_replacet generate_symbol_resolution_from_equations(
+  const std::vector<equal_exprt> &equations,
+  const namespacet &ns,
+  messaget::mstreamt &stream);
+void replace_symbols_in_equations(
+  const union_find_replacet &symbol_resolve,
+  std::vector<equal_exprt> &equations);
+void output_equations(
+  std::ostream &output,
+  const std::vector<equal_exprt> &equations,
+  const namespacet &ns);
 #endif

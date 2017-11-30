@@ -340,7 +340,7 @@ static bool has_char_pointer_subtype(const typet &type, const namespacet &ns)
 /// \param expr: an expression
 /// \param ns: name space
 /// \return true if a subexpression of `expr` is an array of characters
-static bool has_char_array_subexpr(const exprt &expr, const namespacet &ns)
+bool has_char_array_subexpr(const exprt &expr, const namespacet &ns)
 {
   for(auto it = expr.depth_begin(); it != expr.depth_end(); ++it)
     if(is_char_array_type(it->type(), ns))
@@ -384,7 +384,7 @@ void string_refinementt::set_to(const exprt &expr, bool value)
 /// \param stream: output stream
 /// \return union_find_replacet where char pointer that have been set equal
 ///         by an equation are associated to the same element
-static union_find_replacet generate_symbol_resolution_from_equations(
+union_find_replacet generate_symbol_resolution_from_equations(
   const std::vector<equal_exprt> &equations,
   const namespacet &ns,
   messaget::mstreamt &stream)
@@ -453,6 +453,7 @@ void output_equations(
   const std::vector<equal_exprt> &equations,
   const namespacet &ns)
 {
+  output << "output equations\n";
   for(const auto &eq : equations)
     output << "  * " << from_expr(ns, "", eq.lhs())
            << " == " << from_expr(ns, "", eq.rhs()) << std::endl;
