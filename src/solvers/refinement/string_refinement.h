@@ -43,7 +43,7 @@ struct string_axiomst
   std::vector<string_not_contains_constraintt> not_contains;
 };
 
-class string_refinementt final: public bv_refinementt
+class string_refinementt: public bv_refinementt
 {
 private:
   struct configt
