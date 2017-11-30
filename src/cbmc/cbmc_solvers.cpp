@@ -20,7 +20,7 @@ Author: Daniel Kroening, kroening@kroening.com
 
 #include <solvers/sat/satcheck.h>
 #include <solvers/refinement/bv_refinement.h>
-#include <solvers/refinement/string_refinement.h>
+#include <solvers/refinement/lazy_string_solver.h>
 #include <solvers/smt1/smt1_dec.h>
 #include <solvers/smt2/smt2_dec.h>
 #include <solvers/cvc/cvc_dec.h>
@@ -187,7 +187,7 @@ std::unique_ptr<cbmc_solverst::solvert> cbmc_solverst::get_string_refinement()
   info.refine_arithmetic=options.get_bool_option("refine-arithmetic");
 
   return util_make_unique<solvert>(
-    util_make_unique<string_refinementt>(info), std::move(prop));
+    util_make_unique<lazy_string_solvert>(info), std::move(prop));
 }
 
 std::unique_ptr<cbmc_solverst::solvert> cbmc_solverst::get_smt1(
