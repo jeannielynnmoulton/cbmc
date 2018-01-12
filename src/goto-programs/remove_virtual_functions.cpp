@@ -58,7 +58,6 @@ protected:
     const symbol_exprt &,
     const irep_idt &,
     dispatch_table_entriest &,
-    std::set<irep_idt> &visited,
     const function_call_resolvert &) const;
   exprt
   get_method(const irep_idt &class_id, const irep_idt &component_name) const;
@@ -269,7 +268,6 @@ void remove_virtual_functionst::get_child_functions_rec(
   const symbol_exprt &last_method_defn,
   const irep_idt &component_name,
   dispatch_table_entriest &functions,
-  std::set<irep_idt> &visited,
   const function_call_resolvert &resolve_function_call) const
 {
   auto findit=class_hierarchy.class_map.find(this_id);
@@ -278,8 +276,6 @@ void remove_virtual_functionst::get_child_functions_rec(
 
   for(const auto &child : findit->second.children)
   {
-    if(!visited.insert(child).second)
-      continue;
     exprt method=get_method(child, component_name);
     dispatch_table_entryt function(child);
     if(method.is_not_nil())
@@ -313,17 +309,22 @@ void remove_virtual_functionst::get_child_functions_rec(
       function.symbol_expr,
       component_name,
       functions,
-      visited,
       resolve_function_call);
   }
 }
 
+/// Used to get dispatch entries to call for the given function
+/// \param function: function that should be called
+/// \param[out] `functions` is assigned a list of dispatch entries, i.e., pairs of
+/// class names and function symbol to call when encountering the class.
 void remove_virtual_functionst::get_functions(
   const exprt &function,
   dispatch_table_entriest &functions)
 {
+  // class part of function to call
   const irep_idt class_id=function.get(ID_C_class);
   const std::string class_id_string(id2string(class_id));
+  // method/function name of function to call
   const irep_idt component_name=function.get(ID_component_name);
   const std::string component_name_string(id2string(component_name));
   INVARIANT(!class_id.empty(), "All virtual functions must have a class");
@@ -359,17 +360,32 @@ void remove_virtual_functionst::get_functions(
   }
 
   // iterate over all children, transitively
-  std::set<irep_idt> visited;
   get_child_functions_rec(
     class_id,
     root_function.symbol_expr,
     component_name,
     functions,
-    visited,
     resolve_function_call);
 
   if(root_function.symbol_expr!=symbol_exprt())
     functions.push_back(root_function);
+
+  // remove all classes from dispatch table where concrete call has been found
+  std::set<irep_idt> concrete_call;
+  for(const auto &entry : functions)
+  {
+    if(entry.symbol_expr != root_function.symbol_expr)
+      concrete_call.insert(entry.class_id);
+  }
+
+  std::remove_if(
+    functions.begin(),
+    functions.end(),
+    [&concrete_call, &root_function](const dispatch_table_entryt &entry) {
+      return
+        concrete_call.find(entry.class_id) != concrete_call.end() &&
+        entry.symbol_expr == root_function.symbol_expr;
+    });
 }
 
 exprt remove_virtual_functionst::get_method(
