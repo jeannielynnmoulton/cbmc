@@ -55,13 +55,6 @@ class DerivedGenericMixed2<T> extends GenericTwoParam<T, Integer>
     // and the other is not.
 }
 
-class NotGeneric {
-    int field;
-}
-
-class ExtendsNotGeneric extends NotGeneric {
-}
-
 class ContainsInnerClass {
 
     InnerClass ic;
@@ -89,14 +82,6 @@ class ThreeHierarchy extends DerivedGenericMixed2<String> {
 
     // This class extends a specialised class that extends another generic
     // class.
-
-}
-
-class ImplementsInterface implements Interface {
-
-    public int getX() {
-        return 0;
-    }
 
 }
 
