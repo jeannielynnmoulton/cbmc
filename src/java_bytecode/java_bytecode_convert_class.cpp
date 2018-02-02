@@ -86,55 +86,67 @@ protected:
 };
 
 /// Auxiliary function to extract the generic superclass reference from the
-/// class signature. If the superclass is not generic, it returns an empty
-/// string.
+/// class signature. If the signature is empty or the superclass is not generic
+/// it returns empty.
+/// Example:
+/// - class: A<T> extends B<T, Integer> implements C, D<T>
+/// - signature: <T:Ljava/lang/Object;>B<TT;Ljava/lang/Integer;>;LC;LD<TT;>;
+/// - superclass reference: B<TT;Ljava/lang/Integer;>;
 /// \param signature Signature of the class
 /// \return Reference of the generic superclass, or empty if the superclass
 /// is not generic
-static std::string
-extract_generic_superclass_reference(const std::string &signature)
+static optionalt<std::string>
+extract_generic_superclass_reference(const optionalt<std::string> &signature)
 {
-  // skip the (potential) list of generic parameters at the beginning of the
-  // signature
-  const size_t start = signature.front() == '<'
-                         ? find_closing_delimiter(signature, 0, '<', '>') + 1
-                         : 0;
+  if(signature.has_value())
+  {
+    // skip the (potential) list of generic parameters at the beginning of the
+    // signature
+    const size_t start =
+      signature.value().front() == '<'
+        ? find_closing_delimiter(signature.value(), 0, '<', '>') + 1
+        : 0;
 
-  // extract the superclass reference
-  const std::string superclass_ref = signature.substr(
-    start,
-    find_closing_semi_colon_for_reference_type(signature, start) - start + 1);
+    // extract the superclass reference
+    const std::string superclass_ref = signature.value().substr(
+      start,
+      find_closing_semi_colon_for_reference_type(signature.value(), start) -
+        start + 1);
 
-  // if the superclass is generic then the reference is of form
-  // Lsuperclass-name<generic-types>;
-  if(superclass_ref.substr(superclass_ref.length() - 2) == ">;")
-    return superclass_ref;
-  else
-    return "";
+    // if the superclass is generic then the reference is of form
+    // Lsuperclass-name<generic-types;>;
+    if(superclass_ref.substr(superclass_ref.length() - 2) == ">;")
+      return superclass_ref;
+  }
+  return {};
 }
 
 /// Auxiliary function to extract the generic interface reference of an
 /// interface with the specified name from the class signature. If the
-/// interface is not generic, it returns an empty string.
+/// signature is empty or the interface is not generic it returns empty.
+/// Example:
+/// - class: A<T> extends B<T, Integer> implements C, D<T>
+/// - signature: <T:Ljava/lang/Object;>B<TT;Ljava/lang/Integer;>;LC;LD<TT;>;
+/// - interface reference for C: LC;
+/// - interface reference for D: LD<TT;>;
 /// \param signature Signature of the class
 /// \param interface_name The interface name
 /// \return Reference of the generic interface, or empty if the interface
 /// is not generic
-static std::string extract_generic_interface_reference(
-  const std::string &signature,
+static optionalt<std::string> extract_generic_interface_reference(
+  const optionalt<std::string> &signature,
   const std::string &interface_name)
 {
-  if(signature.find("L" + interface_name + "<") != std::string::npos)
+  if(signature.has_value())
   {
-    const size_t start = signature.find("L" + interface_name + "<");
-    return signature.substr(
-      start,
-      find_closing_semi_colon_for_reference_type(signature, start) - start + 1);
+    const size_t start = signature.value().find("L" + interface_name + "<");
+    if(start != std::string::npos)
+      return signature.value().substr(
+        start,
+        find_closing_semi_colon_for_reference_type(signature.value(), start) -
+          start + 1);
   }
-  else
-  {
-    return "";
-  }
+  return {};
 }
 
 void java_bytecode_convert_classt::convert(const classt &c)
@@ -203,14 +215,12 @@ void java_bytecode_convert_classt::convert(const classt &c)
     // including the generic info in its signature
     // e.g., signature for class 'A<T>' that extends
     // 'Generic<Integer>' is '<T:Ljava/lang/Object;>LGeneric<LInteger;>;'
-    if(
-      c.signature.has_value() &&
-      !extract_generic_superclass_reference(c.signature.value()).empty())
+    const optionalt<std::string> &superclass_ref =
+      extract_generic_superclass_reference(c.signature);
+    if(superclass_ref.has_value())
     {
       const java_generic_symbol_typet gen_base(
-        base,
-        extract_generic_superclass_reference(c.signature.value()),
-        qualified_classname);
+        base, superclass_ref.value(), qualified_classname);
       class_type.add_base(gen_base);
     }
     else
@@ -232,20 +242,14 @@ void java_bytecode_convert_classt::convert(const classt &c)
 
     // if the interface is generic then the class has the interface reference
     // including the generic info in its signature
-    // e.g., signature for class 'A' that implements
-    // 'GenericInterface<Integer>' is 'Ljava/lang/Object;
-    // LGenericInterface<LInteger;>;'
-    if(
-      c.signature.has_value() &&
-      !extract_generic_interface_reference(
-         c.signature.value(), id2string(interface))
-         .empty())
+    // e.g., signature for class 'A implements GenericInterface<Integer>' is
+    // 'Ljava/lang/Object;LGenericInterface<LInteger;>;'
+    const optionalt<std::string> interface_ref =
+      extract_generic_interface_reference(c.signature, id2string(interface));
+    if(interface_ref.has_value())
     {
       const java_generic_symbol_typet gen_base(
-        base,
-        extract_generic_interface_reference(
-          c.signature.value(), id2string(interface)),
-        qualified_classname);
+        base, interface_ref.value(), qualified_classname);
       class_type.add_base(gen_base);
     }
     else
