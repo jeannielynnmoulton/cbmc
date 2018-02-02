@@ -34,6 +34,8 @@ Author: Daniel Kroening, kroening@kroening.com
 #include "java_string_library_preprocess.h"
 #include "java_root_class.h"
 
+#include <iostream>
+
 static symbolt &new_tmp_symbol(
   symbol_table_baset &symbol_table,
   const source_locationt &loc,
@@ -1054,6 +1056,7 @@ void java_object_factoryt::gen_nondet_struct_init(
 
       bool _is_sub=name[0]=='@';
 
+
       // MUST_UPDATE_IN_PLACE only applies to this object.
       // If this is a pointer to another object, offer the chance
       // to leave it alone by setting MAY_UPDATE_IN_PLACE instead.
@@ -1061,6 +1064,22 @@ void java_object_factoryt::gen_nondet_struct_init(
         update_in_place==update_in_placet::MUST_UPDATE_IN_PLACE && !_is_sub ?
         update_in_placet::MAY_UPDATE_IN_PLACE :
         update_in_place;
+
+      std::cout << "\n****************\n";
+      std::cout << "This a a call to gen_nondet_init: \n";
+      std::cout << "CLASS IDENTIFIER: ";
+      std::cout << class_identifier.c_str();
+      std::cout << "\n";
+      std::cout << "STRUCT TYPE: ";
+      std::cout << struct_type.pretty(0,0);
+      std::cout << "\n";
+      std::cout << "COMPONENT: ";
+      std::cout << component.pretty(0,0);
+      std::cout << "\n";
+      std::cout << "IS SUB: ";
+      std::cout << _is_sub;
+      std::cout << "\n****************\n";
+
       gen_nondet_init(
         assignments,
         me,
@@ -1167,6 +1186,18 @@ void java_object_factoryt::gen_nondet_init(
   else if(type.id()==ID_struct)
   {
     const struct_typet struct_type=to_struct_type(type);
+
+    std::cout << "\n****************\n";
+    std::cout << "This a a call to gen_nondet_struct_init: \n";
+    std::cout << "CLASS IDENTIFIER: ";
+    std::cout << class_identifier.c_str();
+    std::cout << "\n";
+    std::cout << "STRUCT TYPE: ";
+    std::cout << struct_type.pretty(0,0);
+    std::cout << "\n";
+    std::cout << "IS SUB: ";
+    std::cout << is_sub;
+    std::cout << "\n****************\n";
     gen_nondet_struct_init(
       assignments,
       expr,
