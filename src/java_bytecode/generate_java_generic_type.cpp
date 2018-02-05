@@ -14,6 +14,7 @@
 #include <util/namespace.h>
 #include <java_bytecode/java_types.h>
 #include <java_bytecode/java_utils.h>
+#include <iostream>
 
 generate_java_generic_typet::generate_java_generic_typet(
   message_handlert &message_handler):
@@ -57,75 +58,91 @@ static std::string argument_name_printer(const reference_typet &argument)
 /// \return The symbol as it was retrieved from the symbol table after
 /// it has been inserted into.
 symbolt generate_java_generic_typet::operator()(
-  const java_generic_typet &existing_generic_type,
+  const typet &existing_generic_type,
   symbol_tablet &symbol_table) const
 {
   namespacet ns(symbol_table);
 
-  const typet &pointer_subtype=ns.follow(existing_generic_type.subtype());
+  PRECONDITION(is_java_generic_symbol_type(existing_generic_type) ||
+               is_java_generic_type(existing_generic_type));
 
-  INVARIANT(
-    pointer_subtype.id()==ID_struct, "Only pointers to classes in java");
-  INVARIANT(
-    is_java_generic_class_type(pointer_subtype) ||
-      is_java_implicitly_generic_class_type(pointer_subtype),
-    "Generic references type must be a generic class");
+  const typet &pointer_subtype=is_java_generic_symbol_type
+                                 (existing_generic_type) ? ns.follow
+    (existing_generic_type):ns.follow
+    (existing_generic_type.subtype());
 
-  const java_class_typet &class_definition =
-    to_java_class_type(pointer_subtype);
+  const auto generic_type_arguments = is_java_generic_symbol_type
+                                        (existing_generic_type) ? to_java_generic_symbol_type
+                                        (existing_generic_type).generic_types() : to_java_generic_type
+                                        (existing_generic_type).generic_type_arguments();
 
-  const std::string generic_name = build_generic_name(
-    existing_generic_type, class_definition, argument_name_printer);
-  struct_union_typet::componentst replacement_components =
-    class_definition.components();
-
-  // Small auxiliary function, to perform the inplace
-  // modification of the generic fields.
-  auto replace_type_for_generic_field =
-    [&](struct_union_typet::componentt &component) {
-
-      component.type() = substitute_type(
-        component.type(), class_definition, existing_generic_type);
-
-      return component;
-    };
-
-  std::size_t pre_modification_size=to_java_class_type(
-    ns.follow(existing_generic_type.subtype())).components().size();
-
-  std::for_each(
-    replacement_components.begin(),
-    replacement_components.end(),
-    replace_type_for_generic_field);
-
-  std::size_t after_modification_size = class_definition.components().size();
-
-  INVARIANT(
-    pre_modification_size==after_modification_size,
-    "All components in the original class should be in the new class");
-
-  const java_specialized_generic_class_typet new_java_class{
-    generic_name,
-    class_definition,
-    replacement_components,
-    existing_generic_type.generic_type_arguments()};
-
-  const type_symbolt &class_symbol =
-    build_symbol_from_specialised_class(new_java_class);
-
-  std::pair<symbolt &, bool> res = symbol_table.insert(std::move(class_symbol));
-  if(!res.second)
+  if (is_java_generic_type(existing_generic_type))
   {
-    messaget message(message_handler);
-    message.warning() << "stub class symbol " << class_symbol.name
-                      << " already exists" << messaget::eom;
+    INVARIANT(
+      pointer_subtype.id()==ID_struct, "Only pointers to classes in java");
+    INVARIANT(
+      is_java_generic_class_type(pointer_subtype) ||
+      is_java_implicitly_generic_class_type(pointer_subtype),
+      "Generic references type must be a generic class");
   }
 
-  const auto expected_symbol="java::"+id2string(generic_name);
-  auto symbol=symbol_table.lookup(expected_symbol);
-  INVARIANT(symbol, "New class not created");
-  return *symbol;
+    const java_class_typet &class_definition=
+      to_java_class_type(pointer_subtype);
+
+    const std::string generic_name=build_generic_name(
+      existing_generic_type, class_definition, argument_name_printer);
+    struct_union_typet::componentst replacement_components=
+      class_definition.components();
+
+    // Small auxiliary function, to perform the inplace
+    // modification of the generic fields.
+    auto replace_type_for_generic_field=
+      [&](struct_union_typet::componentt &component)
+      {
+
+        component.type()=substitute_type(
+          component.type(), class_definition, existing_generic_type);
+
+        return component;
+      };
+
+    std::size_t pre_modification_size=to_java_class_type(
+      ns.follow(pointer_subtype)).components().size();
+
+    std::for_each(
+      replacement_components.begin(),
+      replacement_components.end(),
+      replace_type_for_generic_field);
+
+    std::size_t after_modification_size=class_definition.components().size();
+
+    INVARIANT(
+      pre_modification_size==after_modification_size,
+      "All components in the original class should be in the new class");
+
+    const java_specialized_generic_class_typet new_java_class{
+      generic_name,
+      class_definition,
+      replacement_components,
+      generic_type_arguments};
+
+    const type_symbolt &class_symbol=
+      build_symbol_from_specialised_class(new_java_class);
+
+    std::pair<symbolt &, bool> res=symbol_table.insert(std::move(class_symbol));
+    if(!res.second)
+    {
+      messaget message(message_handler);
+      message.warning() << "stub class symbol " << class_symbol.name
+                        << " already exists" << messaget::eom;
+    }
+
+    const auto expected_symbol="java::"+id2string(generic_name);
+    auto symbol=symbol_table.lookup(expected_symbol);
+    INVARIANT(symbol, "New class not created");
+    return *symbol;
 }
+
 
 /// For a given type, if the type contains a Java generic parameter, we look
 /// that parameter up and return the relevant type. This works recursively on
@@ -142,7 +159,7 @@ symbolt generate_java_generic_typet::operator()(
 typet generate_java_generic_typet::substitute_type(
   const typet &parameter_type,
   const java_class_typet &class_definition,
-  const java_generic_typet &generic_reference) const
+  const typet &generic_reference) const
 {
   if(is_java_generic_parameter(parameter_type))
   {
@@ -174,7 +191,10 @@ typet generate_java_generic_typet::substitute_type(
     }
 
     INVARIANT(results.has_value(), "generic component type not found");
-    return generic_reference.generic_type_arguments()[*results];
+//    return generic_reference.generic_type_arguments()[*results];
+    return is_java_generic_symbol_type(generic_reference) ?
+      to_java_generic_symbol_type(generic_reference).generic_types()[*results] :
+           to_java_generic_type(generic_reference).generic_type_arguments()[*results];
   }
   else if(parameter_type.id() == ID_pointer)
   {
@@ -248,7 +268,7 @@ typet generate_java_generic_typet::substitute_type(
 /// \return A name for the new specialized generic class we want a unique name
 /// for.
 std::string generate_java_generic_typet::build_generic_name(
-  const java_generic_typet &existing_generic_type,
+  const typet &existing_generic_type,
   const java_class_typet &original_class,
   const generic_arguments_name_buildert::name_printert &argument_name_printer)
   const
@@ -278,9 +298,14 @@ std::string generate_java_generic_typet::build_generic_name(
       generic_original_class.generic_types().end());
   }
 
+  const auto generic_type_arguments = is_java_generic_symbol_type
+                                        (existing_generic_type) ? to_java_generic_symbol_type
+                                        (existing_generic_type).generic_types() : to_java_generic_type
+                                        (existing_generic_type).generic_type_arguments();
+
   INVARIANT(
     generic_types.size() ==
-      existing_generic_type.generic_type_arguments().size(),
+      generic_type_arguments.size(),
     "All generic types must be concretized");
 
   auto generic_type_p = generic_types.begin();
@@ -291,7 +316,7 @@ std::string generate_java_generic_typet::build_generic_name(
 
   // add generic arguments to each generic (outer) class
   for(const auto &generic_argument :
-      existing_generic_type.generic_type_arguments())
+      generic_type_arguments)
   {
     previous_class_name = current_class_name;
     current_class_name = generic_type_p->get_parameter_class_name();

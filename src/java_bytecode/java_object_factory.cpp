@@ -33,6 +33,7 @@ Author: Daniel Kroening, kroening@kroening.com
 #include "java_utils.h"
 #include "java_string_library_preprocess.h"
 #include "java_root_class.h"
+#include "generate_java_generic_type.h"
 
 #include <iostream>
 
@@ -166,6 +167,12 @@ private:
     allocation_typet alloc_type,
     const pointer_typet &substitute_pointer_type,
     size_t depth);
+
+  typet get_type_for_expression(const exprt &expr);
+
+  typet get_type_for_expression(const exprt &expr,
+                                const typet &override_type,
+                                bool override_);
 };
 
 /// Generates code for allocating a dynamic object. This is used in
@@ -1065,20 +1072,20 @@ void java_object_factoryt::gen_nondet_struct_init(
         update_in_placet::MAY_UPDATE_IN_PLACE :
         update_in_place;
 
-      std::cout << "\n****************\n";
-      std::cout << "This a a call to gen_nondet_init: \n";
-      std::cout << "CLASS IDENTIFIER: ";
-      std::cout << class_identifier.c_str();
-      std::cout << "\n";
-      std::cout << "STRUCT TYPE: ";
-      std::cout << struct_type.pretty(0,0);
-      std::cout << "\n";
-      std::cout << "COMPONENT: ";
-      std::cout << component.pretty(0,0);
-      std::cout << "\n";
-      std::cout << "IS SUB: ";
-      std::cout << _is_sub;
-      std::cout << "\n****************\n";
+//      std::cout << "\n****************\n";
+//      std::cout << "This a a call to gen_nondet_init: \n";
+//      std::cout << "CLASS IDENTIFIER: ";
+//      std::cout << class_identifier.c_str();
+//      std::cout << "\n";
+//      std::cout << "STRUCT TYPE: ";
+//      std::cout << struct_type.pretty(0,0);
+//      std::cout << "\n";
+//      std::cout << "COMPONENT: ";
+//      std::cout << component.pretty(0,0);
+//      std::cout << "\n";
+//      std::cout << "IS SUB: ";
+//      std::cout << _is_sub;
+//      std::cout << "\n****************\n";
 
       gen_nondet_init(
         assignments,
@@ -1116,7 +1123,29 @@ void java_object_factoryt::gen_nondet_struct_init(
   }
 }
 
-/// Initializes a primitive-typed or referece-typed object tree rooted at
+typet java_object_factoryt::get_type_for_expression(const exprt &expr,
+                                                    const typet
+                                                    &override_type, bool override_) {
+  if(is_java_generic_symbol_type(expr.type())) {
+//    std::cout << "\n*******SUBTYPE****\n";
+//    std::cout << expr.type().subtype().pretty(0,0);
+//    std::cout << "\n***********\n";
+    auto message_handler = null_message_handlert();
+    generate_java_generic_typet generics_generator(message_handler);
+    const java_generic_symbol_typet &java_ref = to_java_generic_symbol_type
+      (expr.type());
+    symbolt symbol = generics_generator(
+      java_ref, const_cast<symbol_tablet &>(ns.get_symbol_table()));
+    return symbol.type;
+  } else
+  {
+    const typet &type=
+      override_?ns.follow(override_type):ns.follow(expr.type());
+    return type;
+  }
+}
+
+/// Initializes a primitive-typed or reference-typed object tree rooted at
 /// `expr`, allocating child objects as necessary and nondet-initializing their
 /// members, or if MUST_UPDATE_IN_PLACE is set, re-initializing
 /// already-allocated objects.
@@ -1165,8 +1194,31 @@ void java_object_factoryt::gen_nondet_init(
   size_t depth,
   update_in_placet update_in_place)
 {
-  const typet &type=
-    override_ ? ns.follow(override_type) : ns.follow(expr.type());
+//  std::cout << "\n****************\n";
+//  std::cout << "This in gen_nondet_init before ternary op: \n";
+//  std::cout << "EXPRESSION: ";
+//  std::cout << expr.pretty(0,0);
+//  std::cout << "\n****************\n";
+//  const typet &type=
+//    override_?ns.follow(override_type):ns.follow(expr.type());
+//  // except if it is a generic symbol type, then we need to build a new symbol
+//  if(is_java_generic_symbol_type(expr.type())) {
+  const typet &type =
+//    override_?ns.follow(override_type):ns.follow(expr.type());
+    get_type_for_expression(expr, override_type, override_);
+
+//  }
+
+      std::cout << "\n****GENERIC SYMBOL TYPE****\n";
+      std::cout << type.pretty(0,0);
+      std::cout << "\n************\n";
+
+
+//  std::cout << "\n****************\n";
+//  std::cout << "This in gen_nondet_init after ternary op: \n";
+//  std::cout << "TYPE: ";
+//  std::cout << type.pretty(0,0);
+//  std::cout << "\n****************\n";
 
 
   if(type.id()==ID_pointer)
@@ -1187,7 +1239,7 @@ void java_object_factoryt::gen_nondet_init(
   {
     const struct_typet struct_type=to_struct_type(type);
 
-    std::cout << "\n****************\n";
+/*    std::cout << "\n****************\n";
     std::cout << "This a a call to gen_nondet_struct_init: \n";
     std::cout << "CLASS IDENTIFIER: ";
     std::cout << class_identifier.c_str();
@@ -1197,7 +1249,7 @@ void java_object_factoryt::gen_nondet_init(
     std::cout << "\n";
     std::cout << "IS SUB: ";
     std::cout << is_sub;
-    std::cout << "\n****************\n";
+    std::cout << "\n****************\n";*/
     gen_nondet_struct_init(
       assignments,
       expr,

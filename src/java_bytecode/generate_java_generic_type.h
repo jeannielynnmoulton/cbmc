@@ -22,11 +22,11 @@ public:
   explicit generate_java_generic_typet(message_handlert &message_handler);
 
   symbolt operator()(
-    const java_generic_typet &existing_generic_type,
+    const typet &existing_generic_type,
     symbol_tablet &symbol_table) const;
 private:
   std::string build_generic_name(
-    const java_generic_typet &existing_generic_type,
+    const typet &existing_generic_type,
     const java_class_typet &original_class,
     const generic_arguments_name_buildert::name_printert &argument_name_printer)
     const;
@@ -34,7 +34,7 @@ private:
   typet substitute_type(
     const typet &parameter_type,
     const java_class_typet &replacement_type,
-    const java_generic_typet &generic_reference) const;
+    const typet &generic_reference) const;
 
   type_symbolt build_symbol_from_specialised_class(
     const java_class_typet &specialised_class) const;
