@@ -174,6 +174,8 @@ exprt::operandst java_build_arguments(
   const code_typet::parameterst &parameters=
     to_code_type(function.type).parameters();
 
+//  symbol_table.show(std::cout);
+
   exprt::operandst main_arguments;
   main_arguments.resize(parameters.size());
 
@@ -328,6 +330,7 @@ main_function_resultt get_main_symbol(
   message_handlert &message_handler)
 {
   messaget message(message_handler);
+//  symbol_table.show(std::cout);
 
   // find main symbol
   if(config.main!="")

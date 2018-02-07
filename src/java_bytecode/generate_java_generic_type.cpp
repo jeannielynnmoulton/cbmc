@@ -76,15 +76,12 @@ symbolt generate_java_generic_typet::operator()(
                                         (existing_generic_type).generic_types() : to_java_generic_type
                                         (existing_generic_type).generic_type_arguments();
 
-  if (is_java_generic_type(existing_generic_type))
-  {
     INVARIANT(
       pointer_subtype.id()==ID_struct, "Only pointers to classes in java");
     INVARIANT(
       is_java_generic_class_type(pointer_subtype) ||
       is_java_implicitly_generic_class_type(pointer_subtype),
       "Generic references type must be a generic class");
-  }
 
     const java_class_typet &class_definition=
       to_java_class_type(pointer_subtype);
