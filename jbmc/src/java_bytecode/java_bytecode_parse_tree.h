@@ -98,6 +98,7 @@ struct java_bytecode_parse_treet
       return instructions.back();
     }
 
+    std::vector<std::string> throws_exception_table;
 
     struct handled_exceptiont
     {

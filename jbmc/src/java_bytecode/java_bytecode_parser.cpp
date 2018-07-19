@@ -1682,6 +1682,7 @@ void java_bytecode_parsert::rexceptions_attribute(methodt &method, const u4 &att
     std::string exception_name = class_infot(pool_entry(exception_index_table))
       .get_name(pool_entry_lambda);
     std::replace(exception_name.begin(), exception_name.end(), '/', '.');
+    method.throws_exception_table.push_back(exception_name);
   }
 }
 
