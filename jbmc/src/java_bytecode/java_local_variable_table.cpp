@@ -56,7 +56,7 @@ struct procedure_local_cfg_baset<
     }
     // Next, add edges declared in the exception table, which
     // don't figure in the address map successors/predecessors as yet:
-    for(const auto &table_entry : method.exception_table)
+    for(const auto &table_entry : method.handled_exception_table)
     {
       auto findit=amap.find(table_entry.start_pc);
       INVARIANT(

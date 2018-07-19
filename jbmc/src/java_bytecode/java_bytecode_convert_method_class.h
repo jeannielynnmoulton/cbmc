@@ -306,7 +306,7 @@ protected:
 
   std::vector<unsigned int> try_catch_handler(
     unsigned int address,
-    const java_bytecode_parse_treet::methodt::exception_tablet &exception_table)
+    const java_bytecode_parse_treet::methodt::handled_exception_tablet &handled_exception_table)
     const;
 
   void draw_edges_from_ret_to_jsr(

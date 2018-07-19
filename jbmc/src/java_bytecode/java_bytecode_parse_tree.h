@@ -98,9 +98,10 @@ struct java_bytecode_parse_treet
       return instructions.back();
     }
 
-    struct exceptiont
+
+    struct handled_exceptiont
     {
-      exceptiont()
+      handled_exceptiont()
         : start_pc(0), end_pc(0), handler_pc(0), catch_type(irep_idt())
       {
       }
@@ -111,8 +112,8 @@ struct java_bytecode_parse_treet
       symbol_typet catch_type;
     };
 
-    typedef std::vector<exceptiont> exception_tablet;
-    exception_tablet exception_table;
+    typedef std::vector<handled_exceptiont> handled_exception_tablet;
+    handled_exception_tablet handled_exception_table;
 
     struct local_variablet
     {

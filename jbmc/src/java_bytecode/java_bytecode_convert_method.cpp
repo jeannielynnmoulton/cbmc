@@ -1048,7 +1048,7 @@ codet java_bytecode_convert_methodt::convert_instructions(
        i_it->statement=="monitorexit")))
     {
       const std::vector<unsigned int> handler =
-        try_catch_handler(i_it->address, method.exception_table);
+        try_catch_handler(i_it->address, method.handled_exception_table);
       std::list<unsigned int> &successors = a_entry.first->second.successors;
       successors.insert(successors.end(), handler.begin(), handler.end());
       targets.insert(handler.begin(), handler.end());
@@ -1178,8 +1178,8 @@ codet java_bytecode_convert_methodt::convert_instructions(
     // Find catch blocks that begin here. For now we assume if more than
     // one catch targets the same bytecode then we must be indifferent to
     // its type and just call it a Throwable.
-    auto it=method.exception_table.begin();
-    for(; it!=method.exception_table.end(); ++it)
+    auto it=method.handled_exception_table.begin();
+    for(; it!=method.handled_exception_table.end(); ++it)
     {
       if(cur_pc==it->handler_pc)
       {
@@ -1701,7 +1701,7 @@ codet java_bytecode_convert_methodt::convert_instructions(
       CHECK_RETURN(a_it2 != address_map.end());
 
       // clear the stack if this is an exception handler
-      for(const auto &exception_row : method.exception_table)
+      for(const auto &exception_row : method.handled_exception_table)
       {
         if(address==exception_row.handler_pc)
         {
@@ -1821,7 +1821,7 @@ codet java_bytecode_convert_methodt::convert_instructions(
     // Start a new lexical block if we've just entered a try block
     if(!start_new_block && has_seen_previous_address)
     {
-      for(const auto &exception_row : method.exception_table)
+      for(const auto &exception_row : method.handled_exception_table)
         if(exception_row.start_pc==previous_address)
         {
           start_new_block=true;
@@ -2350,29 +2350,29 @@ codet &java_bytecode_convert_methodt::do_exception_handling(
   // be aware of different try-catch blocks with the same starting pc
   std::size_t pos = 0;
   std::size_t end_pc = 0;
-  while(pos < method.exception_table.size())
+  while(pos < method.handled_exception_table.size())
   {
     // check if this is the beginning of a try block
-    for(; pos < method.exception_table.size(); ++pos)
+    for(; pos < method.handled_exception_table.size(); ++pos)
     {
       // unexplored try-catch?
-      if(cur_pc == method.exception_table[pos].start_pc && end_pc == 0)
+      if(cur_pc == method.handled_exception_table[pos].start_pc && end_pc == 0)
       {
-        end_pc = method.exception_table[pos].end_pc;
+        end_pc = method.handled_exception_table[pos].end_pc;
       }
 
       // currently explored try-catch?
       if(
-        cur_pc == method.exception_table[pos].start_pc &&
-        method.exception_table[pos].end_pc == end_pc)
+        cur_pc == method.handled_exception_table[pos].start_pc &&
+        method.handled_exception_table[pos].end_pc == end_pc)
       {
         exception_ids.push_back(
-          method.exception_table[pos].catch_type.get_identifier());
+          method.handled_exception_table[pos].catch_type.get_identifier());
         // record the exception handler in the CATCH-PUSH
         // instruction by generating a label corresponding to
         // the handler's pc
         handler_labels.push_back(
-          label(std::to_string(method.exception_table[pos].handler_pc)));
+          label(std::to_string(method.handled_exception_table[pos].handler_pc)));
       }
       else
         break;
@@ -2417,7 +2417,7 @@ codet &java_bytecode_convert_methodt::do_exception_handling(
   // must track it separately
   bool first_handler = false;
   // check if this is the end of a try block
-  for(const auto &exception_row : method.exception_table)
+  for(const auto &exception_row : method.handled_exception_table)
   {
     // add the CATCH-POP before the end of the try block
     if(
@@ -2994,11 +2994,11 @@ void java_bytecode_convert_methodt::draw_edges_from_ret_to_jsr(
 
 std::vector<unsigned> java_bytecode_convert_methodt::try_catch_handler(
   const unsigned int address,
-  const java_bytecode_parse_treet::methodt::exception_tablet &exception_table)
+  const java_bytecode_parse_treet::methodt::handled_exception_tablet &handled_exception_table)
   const
 {
   std::vector<unsigned> result;
-  for(const auto &exception_row : exception_table)
+  for(const auto &exception_row : handled_exception_table)
   {
     if(address >= exception_row.start_pc && address < exception_row.end_pc)
       result.push_back(exception_row.handler_pc);

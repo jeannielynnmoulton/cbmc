@@ -1182,7 +1182,7 @@ void java_bytecode_parsert::rmethod_attribute(methodt &method)
     rbytecode(method.instructions);
 
     u2 exception_table_length=read_u2();
-    method.exception_table.resize(exception_table_length);
+    method.handled_exception_table.resize(exception_table_length);
 
     for(std::size_t e=0; e<exception_table_length; e++)
     {
@@ -1197,11 +1197,11 @@ void java_bytecode_parsert::rmethod_attribute(methodt &method)
 
       u2 handler_pc=read_u2();
       u2 catch_type=read_u2();
-      method.exception_table[e].start_pc=start_pc;
-      method.exception_table[e].end_pc=end_pc;
-      method.exception_table[e].handler_pc=handler_pc;
+      method.handled_exception_table[e].start_pc=start_pc;
+      method.handled_exception_table[e].end_pc=end_pc;
+      method.handled_exception_table[e].handler_pc=handler_pc;
       if(catch_type!=0)
-        method.exception_table[e].catch_type=
+        method.handled_exception_table[e].catch_type=
           to_symbol_type(pool_entry(catch_type).expr.type());
     }
 
