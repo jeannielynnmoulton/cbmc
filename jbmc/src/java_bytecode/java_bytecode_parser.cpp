@@ -121,6 +121,7 @@ protected:
   void rmethod(classt &parsed_class);
   void
   rinner_classes_attribute(classt &parsed_class, const u4 &attribute_length);
+  void rexceptions_attribute(methodt &method, const u4 &attribute_length);
   void rclass_attribute(classt &parsed_class);
   void rRuntimeAnnotation_attribute(annotationst &);
   void rRuntimeAnnotation(annotationt &);
@@ -1242,6 +1243,8 @@ void java_bytecode_parsert::rmethod_attribute(methodt &method)
           attribute_name=="RuntimeVisibleAnnotations")
   {
     rRuntimeAnnotation_attribute(method.annotations);
+  } else if(attribute_name == "Exceptions") {
+    java_bytecode_parsert::rexceptions_attribute(method, attribute_length);
   }
   else
     skip_bytes(attribute_length);
@@ -1652,6 +1655,33 @@ void java_bytecode_parsert::rinner_classes_attribute(
       parsed_class.is_protected = is_protected;
       parsed_class.is_public = is_public;
     }
+  }
+}
+
+/// Corresponds to the element_value structure
+/// Described in Java 8 specification 4.7.5
+/// https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-4.html#jvms-4.7.5
+/// Parses the Exceptions attribute for the current method,
+/// which contains a table of the exceptions the method throws.
+void java_bytecode_parsert::rexceptions_attribute(methodt &method, const u4 &attribute_length)
+{
+  std::string name = method.name.c_str();
+  u2 number_of_exceptions = read_u2();
+
+
+  const auto pool_entry_lambda = [this](u2 index) -> pool_entryt & {
+    return pool_entry(index);
+  };
+
+  if (number_of_exceptions == 0)
+    return;
+  for(size_t i = 0; i < number_of_exceptions; i++)
+  {
+    u2 exception_index_table=read_u2();
+    pool_entryt pool_entry_temp=pool_entry_lambda(exception_index_table);
+    std::string exception_name = class_infot(pool_entry(exception_index_table))
+      .get_name(pool_entry_lambda);
+    std::replace(exception_name.begin(), exception_name.end(), '/', '.');
   }
 }
 
