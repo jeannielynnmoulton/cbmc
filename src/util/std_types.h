@@ -767,6 +767,8 @@ public:
   class parametert;
   typedef std::vector<parametert> parameterst;
 
+  typedef std::vector<class_typet> exceptionst;
+
   /// Constructs a new code type, i.e. function type
   /// \param _parameters: the vector of function parameters
   /// \param _return_type: the return type
@@ -911,6 +913,22 @@ public:
   {
     return (parameterst &)add(ID_parameters).get_sub();
   }
+
+
+
+
+  const exceptionst &throws_exceptions() const
+  {
+    return (const exceptionst &)find(ID_exceptions_thrown_list).get_sub();
+  }
+
+  exceptionst &throws_exceptions()
+  {
+    return (exceptionst &)add(ID_exceptions_thrown_list).get_sub();
+  }
+
+
+
 
   bool get_inlined() const
   {

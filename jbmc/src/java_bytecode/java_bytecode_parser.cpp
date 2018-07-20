@@ -1668,7 +1668,6 @@ void java_bytecode_parsert::rexceptions_attribute(methodt &method, const u4 &att
   std::string name = method.name.c_str();
   u2 number_of_exceptions = read_u2();
 
-
   const auto pool_entry_lambda = [this](u2 index) -> pool_entryt & {
     return pool_entry(index);
   };
@@ -1679,10 +1678,11 @@ void java_bytecode_parsert::rexceptions_attribute(methodt &method, const u4 &att
   {
     u2 exception_index_table=read_u2();
     pool_entryt pool_entry_temp=pool_entry_lambda(exception_index_table);
-    std::string exception_name = class_infot(pool_entry(exception_index_table))
-      .get_name(pool_entry_lambda);
-    std::replace(exception_name.begin(), exception_name.end(), '/', '.');
-    method.throws_exception_table.push_back(exception_name);
+    const auto temp = constant(exception_index_table).type().get(ID_C_base_name);
+//    std::string exception_name = class_infot(pool_entry(exception_index_table))
+//      .get_name(pool_entry_lambda);
+//    std::replace(exception_name.begin(), exception_name.end(), '/', '.');
+    method.throws_exception_table.push_back(temp);
   }
 }
 

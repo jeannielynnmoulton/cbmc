@@ -98,8 +98,6 @@ struct java_bytecode_parse_treet
       return instructions.back();
     }
 
-    std::vector<std::string> throws_exception_table;
-
     struct handled_exceptiont
     {
       handled_exceptiont()
@@ -115,6 +113,9 @@ struct java_bytecode_parse_treet
 
     typedef std::vector<handled_exceptiont> handled_exception_tablet;
     handled_exception_tablet handled_exception_table;
+
+    typedef std::vector<irep_idt> throws_exception_tablet;
+    throws_exception_tablet throws_exception_table;
 
     struct local_variablet
     {

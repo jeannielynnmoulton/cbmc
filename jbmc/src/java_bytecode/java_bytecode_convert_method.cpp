@@ -619,6 +619,15 @@ void java_bytecode_convert_methodt::convert(
       code_type,
       method_symbol.name,
       to_java_class_type(class_symbol.type).lambda_method_handles());
+
+  code_typet::exceptionst &exceptions_list = code_type.throws_exceptions();
+  for(const auto &p : m.throws_exception_table)
+  {
+    exceptions_list.push_back(to_java_class_type(symbol_table.lookup_ref(p).type));
+  }
+
+
+
 }
 
 const bytecode_infot &java_bytecode_convert_methodt::get_bytecode_info(
