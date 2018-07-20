@@ -767,7 +767,7 @@ public:
   class parametert;
   typedef std::vector<parametert> parameterst;
 
-  typedef std::vector<class_typet> exceptionst;
+  typedef std::vector<irep_idt> exceptionst;
 
   /// Constructs a new code type, i.e. function type
   /// \param _parameters: the vector of function parameters

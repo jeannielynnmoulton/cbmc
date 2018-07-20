@@ -609,6 +609,11 @@ void java_bytecode_convert_methodt::convert(
                                 id2string(m.base_name) + signature_string;
   }
 
+  code_typet::exceptionst &exceptions_list = code_type.throws_exceptions();
+  exceptions_list.resize(m.throws_exception_table.size());
+  for(auto &p : m.throws_exception_table)
+    exceptions_list.push_back(p);
+
   method_symbol.type = code_type;
 
   current_method=method_symbol.name;
