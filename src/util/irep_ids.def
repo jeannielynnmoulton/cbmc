@@ -678,6 +678,7 @@ IREP_ID_ONE(is_anonymous)
 IREP_ID_ONE(outer_class)
 IREP_ID_ONE(is_bridge_method)
 IREP_ID_ONE(exceptions_thrown_list)
+IREP_ID_ONE(parent_class)
 
 // Projects depending on this code base that wish to extend the list of
 // available ids should provide a file local_irep_ids.h in their source tree and
